@@ -1,114 +1,281 @@
+/* App Layout */
 .app-container {
-  font-family: "Arial", sans-serif;
-  background: #fbfbfb;
-  min-height: 100vh;
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(to bottom right, #f0f4f8, #dbe9f4);
+  height: 110vh;
+  padding: 10px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
+/* Header Title */
 .header {
   width: 100%;
-  background: #213f5e;
-  color: #fff;
-  padding: 16px 0 16px 0;
-  font-size: 2rem;
+  background: linear-gradient(90deg, #1e3c72 0%, rgb(0, 159, 177) 50%, #2a5298 100%);
+  color: #ffffff;
+  padding: 12px 0;
+  font-size: 1.8rem;
   text-align: center;
-  border-radius: 0 0 8px 8px;
-  margin-bottom: 18px;
-  letter-spacing: 1px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  letter-spacing: 0.8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  line-height: 0.3;
 }
 
+/* Layout: Grid + Controls */
 .main-content {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  gap: 36px;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px;
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
 }
 
+/* Sudoku Section */
+.sudoku-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Sudoku Grid Table */
 .sudoku-grid {
   border-collapse: collapse;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 16px rgba(35, 63, 94, 0.12);
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(33, 63, 94, 0.15);
   overflow: hidden;
-  margin: 10px 0;
 }
+
 .sudoku-grid td {
   border: 1px solid #213f5e;
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   text-align: center;
   vertical-align: middle;
 }
+
 .sudoku-grid .border-bottom {
   border-bottom: 3px solid #213f5e;
 }
 .sudoku-grid .border-right {
   border-right: 3px solid #213f5e;
 }
+
+/* Input Cell Styling */
 .cell-input {
   border: none;
   width: 100%;
   height: 100%;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   text-align: center;
   background: transparent;
   outline: none;
   color: #213f5e;
   font-weight: bold;
+  transition: background 0.2s, color 0.2s;
 }
+
 .cell-input:disabled {
   background: #f2f2f4;
   color: #989a9b;
   font-weight: normal;
 }
+
 .cell-input.given {
   color: #213f5e;
   font-weight: bold;
-  background: #f2f4fb;
+  background: #eaf1fb;
 }
+
 .cell-input.auto-solved {
-  color: #51c878;
-  font-weight: bold;
-  background: #e5fbe6;
+  color: #219653 !important;
+  background: transparent !important;
 }
+
+/* Controls Panel */
 .controls {
-  background: #213f5e;
-  padding: 24px;
-  border-radius: 10px;
-  min-width: 210px;
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 12px;
+  width: 200px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  box-shadow: 0 2px 16px rgba(35, 63, 94, 0.12);
-  margin-top: 10px;
+  gap: 14px;
+  box-shadow: 0 4px 16px rgba(33, 63, 94, 0.12);
+  margin-top: 0;
 }
+
 .controls button {
-  background: #61bfde;
-  color: #213f5e;
+  background: #2a5298;
+  color: #ffffff;
   border: none;
   padding: 10px 0;
-  margin-bottom: 2px;
-  border-radius: 5px;
-  font-size: 1.05rem;
+  border-radius: 6px;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.3s ease;
 }
+
 .controls button:hover:not(:disabled) {
-  background: #ecd30e;
-  color: #213f5e;
+  background: #3bb4c1;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
+
 .controls button:disabled {
   background: #c7c9c9;
   color: #989a9b;
   cursor: not-allowed;
 }
+
+/* Responsive 2-column layout for buttons */
+@media (min-width: 320px) {
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 8px;
+    row-gap: 10px;
+  }
+
+  .controls button {
+    width: 100%;
+  }
+}
+
+/* Error Message – ĐÃ SỬA */
 .error-msg {
-  color: #c7384a;
-  background: #fff;
-  border: 1px solid #c7384a;
-  border-radius: 5px;
-  margin-top: 12px;
-  padding: 8px;
+  padding: 12px 24px;
+  border-radius: 12px;
   text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  background-color: #fff4f4;
+  color: #d60000;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Khi giải xong */
+.error-msg.status-success {
+  background-color: #e6ffe6;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+/* Khi dừng */
+.error-msg.status-stop {
+  background-color: #fffbe6;
+  color: #a67c00;
+  border: 1px solid #ffe082;
+}
+
+
+/* Highlight Cell Errors */
+.cell-error input {
+  background-color: #ffdddd;
+  border: 1px solid red;
+}
+.cell-error {
+  background-color: #ffcccc;
+  border: 1px solid red;
+}
+
+/* Notification (success, etc.) */
+.notification-msg {
+  margin-top: 8px;
+  color: green;
+  font-weight: bold;
+  animation: fadein 0.3s ease;
+}
+
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.number-row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.number-box {
+  width: 34px;
+  height: 34px;
+  background-color: #f0f4f8;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  font-size: 1rem;
+  font-weight: bold;
+  color: #1a73e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  user-select: none;
+}
+
+/* Icon Button Styles */
+.controls-icons {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.icon-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fafbfc;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 10px 6px 10px;
+  cursor: pointer;
+  min-width: 64px;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon-btn svg {
+  margin-bottom: 4px;
+}
+
+.icon-btn span {
+  font-size: 14px;
+  color: #222;
+}
+
+.hint-badge {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  background: #e74c3c;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  padding: 2px 6px;
+  font-weight: bold;
+}
+
+.cell-error {
+  background: #ffd6d6 !important;
+  color: #e00 !important;
 }

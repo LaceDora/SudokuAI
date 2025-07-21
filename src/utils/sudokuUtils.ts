@@ -1,79 +1,199 @@
-export const GRID_SIZE = 9;
-export const EMPTY_GRID = Array.from({ length: GRID_SIZE }, () =>
-  Array(GRID_SIZE).fill("")
-);
+export const GS = 9; // kích thước bảng
+export const E = Array.from({ length: GS }, () => Array(GS).fill(""));
 
-// Kiểm tra số num có hợp lệ đặt ở vị trí (row, col)
-const isValidPlacement = (
-  grid: number[][],
-  row: number,
-  col: number,
-  num: number
-) => {
-  for (let i = 0; i < GRID_SIZE; i++) {
-    if (grid[row][i] === num || grid[i][col] === num) return false;
+// Kiểm tra (hàng, cột 3x3)
+const IP = (g: number[][], r: number, c: number, n: number) => {
+  for (let i = 0; i < GS; i++) {
+    if (g[r][i] === n || g[i][c] === n) return false;
   }
-  const startRow = Math.floor(row / 3) * 3;
-  const startCol = Math.floor(col / 3) * 3;
-  for (let r = 0; r < 3; r++) {
-    for (let c = 0; c < 3; c++) {
-      if (grid[startRow + r][startCol + c] === num) return false;
+  const sr = Math.floor(r / 3) * 3;
+  const sc = Math.floor(c / 3) * 3;
+  for (let rr = 0; rr < 3; rr++) {
+    for (let cc = 0; cc < 3; cc++) {
+      if (g[sr + rr][sc + cc] === n) return false;
     }
   }
   return true;
 };
 
-// Thuật toán backtracking giải Sudoku
-export function solveSudoku(inputGrid: (string | number)[][]) {
-  let grid = inputGrid.map((row) => row.map(Number));
+// Kiểm tra bảng, đánh dấu vị trí sai
+export function V(
+  ig: (string | number)[][]
+): { valid: boolean; invalidPositions: boolean[][] } {
+  const g = ig.map(r => r.map(v => Number(v) || 0));
+  const iv = Array(GS).fill(null).map(() => Array(GS).fill(false));
+  let valid = true;
+
+  for (let r = 0; r < GS; r++) {
+    for (let c = 0; c < GS; c++) {
+      const v = g[r][c];
+      if (v !== 0) {
+        g[r][c] = 0;
+        if (!IP(g, r, c, v)) {
+          iv[r][c] = true;
+          valid = false;
+        }
+        g[r][c] = v;
+      }
+    }
+  }
+  return { valid, invalidPositions: iv };
+}
+
+// Helper: lấy các giá trị hợp lệ cho ô (r, c)
+function getCandidates(g: number[][], r: number, c: number): number[] {
+  if (g[r][c] !== 0) return [];
+  const candidates: number[] = [];
+  for (let n = 1; n <= GS; n++) {
+    if (IP(g, r, c, n)) candidates.push(n);
+  }
+  return candidates;
+}
+
+// Heuristic: Hidden Singles
+function applyHiddenSingles(g: number[][]): boolean {
+  let changed = false;
+  // Kiểm tra từng hàng
+  for (let r = 0; r < GS; r++) {
+    for (let n = 1; n <= GS; n++) {
+      let count = 0, pos = -1;
+      for (let c = 0; c < GS; c++) {
+        if (g[r][c] === 0 && IP(g, r, c, n)) {
+          count++;
+          pos = c;
+        }
+      }
+      if (count === 1 && g[r][pos] === 0) {
+        g[r][pos] = n;
+        changed = true;
+      }
+    }
+  }
+  // Kiểm tra từng cột
+  for (let c = 0; c < GS; c++) {
+    for (let n = 1; n <= GS; n++) {
+      let count = 0, pos = -1;
+      for (let r = 0; r < GS; r++) {
+        if (g[r][c] === 0 && IP(g, r, c, n)) {
+          count++;
+          pos = r;
+        }
+      }
+      if (count === 1 && g[pos][c] === 0) {
+        g[pos][c] = n;
+        changed = true;
+      }
+    }
+  }
+  // Kiểm tra từng vùng 3x3
+  for (let br = 0; br < 3; br++) {
+    for (let bc = 0; bc < 3; bc++) {
+      for (let n = 1; n <= GS; n++) {
+        let count = 0, pos: [number, number] = [-1, -1];
+        for (let rr = 0; rr < 3; rr++) {
+          for (let cc = 0; cc < 3; cc++) {
+            const r = br * 3 + rr, c = bc * 3 + cc;
+            if (g[r][c] === 0 && IP(g, r, c, n)) {
+              count++;
+              pos = [r, c];
+            }
+          }
+        }
+        if (count === 1 && g[pos[0]][pos[1]] === 0) {
+          g[pos[0]][pos[1]] = n;
+          changed = true;
+        }
+      }
+    }
+  }
+  return changed;
+}
+
+let shouldStop = false;
+export function stopSolving() {
+  shouldStop = true;
+}
+
+// thuật toan quay lui + Stop
+export function S(ig: (string | number)[][]) {
+  shouldStop = false;
+  const steps: { grid: number[][]; solved: boolean }[] = [];
+  const g: number[][] = ig.map(r => r.map(v => Number(v) || 0));
+
   function solve(): boolean {
-    for (let r = 0; r < GRID_SIZE; r++) {
-      for (let c = 0; c < GRID_SIZE; c++) {
-        if (!grid[r][c]) {
-          for (let num = 1; num <= GRID_SIZE; num++) {
-            if (isValidPlacement(grid, r, c, num)) {
-              grid[r][c] = num;
-              if (solve()) return true;
-              grid[r][c] = 0;
-            }
+    if (shouldStop) return false;
+    // Áp dụng Hidden Singles cho đến khi không còn thay đổi
+    while (applyHiddenSingles(g)) {
+      steps.push({ grid: g.map(rr => [...rr]), solved: false });
+      if (shouldStop) return false;
+    }
+
+    // Tìm ô trống với số lượng giá trị hợp lệ ít nhất (MRV)
+    // Heuristic: MRV (Minimum Remaining Values)
+    let minCandidates = 10, minR = -1, minC = -1, candidates: number[] = [];
+    for (let r = 0; r < GS; r++) {
+      for (let c = 0; c < GS; c++) {
+        if (g[r][c] === 0) {
+          const cand = getCandidates(g, r, c);
+          if (cand.length < minCandidates) {
+            minCandidates = cand.length;
+            minR = r;
+            minC = c;
+            candidates = cand;
+            if (minCandidates === 0) return false; // dead end
+            if (minCandidates === 1) break; // ưu tiên ô chỉ có 1 lựa chọn
           }
-          return false;
         }
       }
+      if (minCandidates === 1) break;
     }
-    return true;
+  //quay lui
+    if (minR === -1) {
+      steps.push({ grid: g.map(rr => [...rr]), solved: true });
+      return true; // solved
+    }
+
+    for (const n of candidates) {
+      if (shouldStop) return false;
+      g[minR][minC] = n;
+      steps.push({ grid: g.map(rr => [...rr]), solved: false });
+      if (solve()) return true;// 1
+      g[minR][minC] = 0;
+      steps.push({ grid: g.map(rr => [...rr]), solved: false });
+    }
+    return false;
   }
-  const isSolved = solve();
-  return isSolved ? grid.map((row) => row.slice()) : null;
+
+  const success = solve();
+  if (!success && !shouldStop) {
+    steps.push({ grid: g.map(rr => [...rr]), solved: false });
+  }
+  return { steps, stopSolving };
 }
 
-// Hàm shuffle mảng (dùng cho tạo số ngẫu nhiên)
-function shuffle(array: number[]) {
-  for (let i = array.length - 1; i > 0; i--) {
+// Trộn mảng để ngẫu nhiên số
+function sh(arr: number[]) {
+  for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-  return array;
+  return arr;
 }
 
-// Tạo bảng Sudoku hoàn chỉnh (đã giải)
-export function generateCompleteGrid(): number[][] {
-  const grid: number[][] = Array.from({ length: GRID_SIZE }, () =>
-    Array(GRID_SIZE).fill(0)
-  );
+// Tạo bảng 
+export function GC(): number[][] {
+  const g: number[][] = Array.from({ length: GS }, () => Array(GS).fill(0));
 
-  function fillGrid(): boolean {
-    for (let r = 0; r < GRID_SIZE; r++) {
-      for (let c = 0; c < GRID_SIZE; c++) {
-        if (grid[r][c] === 0) {
-          const numbers = shuffle(
-            [...Array(GRID_SIZE).keys()].map((x) => x + 1)
-          );
-          for (const num of numbers) {
-            if (isValidPlacement(grid, r, c, num)) {
-              grid[r][c] = num;
-              if (fillGrid()) return true;
-              grid[r][c] = 0;
+  function fill(): boolean {
+    for (let r = 0; r < GS; r++) {
+      for (let c = 0; c < GS; c++) {
+        if (g[r][c] === 0) {
+          const nums = sh([...Array(GS).keys()].map(x => x + 1));
+          for (const n of nums) {
+            if (IP(g, r, c, n)) {
+              g[r][c] = n;
+              if (fill()) return true;
+              g[r][c] = 0;
             }
           }
           return false;
@@ -83,31 +203,24 @@ export function generateCompleteGrid(): number[][] {
     return true;
   }
 
-  fillGrid();
-  return grid;
+  fill();
+  return g;
 }
 
-// Xóa ngẫu nhiên n ô để tạo đề, kiểu hỗn hợp number | string
-export function removeCells(
-  grid: number[][],
-  n: number
-): (string | number)[][] {
-  const puzzle: (number | string)[][] = grid.map((row) => row.slice());
-  let cellsToRemove = n;
+// xóa n ô random khỏi bảng 
+export function RC(g: number[][], n: number): (string | number)[][] {
+  const p: (number | string)[][] = g.map(r => r.slice());
+  let toRemove = n;
 
-  while (cellsToRemove > 0) {
-    const r = Math.floor(Math.random() * GRID_SIZE);
-    const c = Math.floor(Math.random() * GRID_SIZE);
-
-    if (
-      puzzle[r][c] !== "" &&
-      puzzle[r][c] !== 0 &&
-      puzzle[r][c] !== null &&
-      puzzle[r][c] !== undefined
-    ) {
-      puzzle[r][c] = "";
-      cellsToRemove--;
+  while (toRemove > 0) {
+    const r = Math.floor(Math.random() * GS);
+    const c = Math.floor(Math.random() * GS);
+    if (p[r][c] !== "") {
+      p[r][c] = "";
+      toRemove--;
     }
   }
-  return puzzle;
+  return p;
 }
+
+//Thuật toán quay lui và các kỹ thuật khác (tạo, kiểm tra, giải)
